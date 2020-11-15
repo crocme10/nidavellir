@@ -31,6 +31,7 @@ pub struct EnvironmentEntity {
     pub id: EntityId,
     pub name: String,
     pub signature: String,
+    pub port: i32,
     pub indexes: Vec<IndexEntity>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
@@ -40,7 +41,7 @@ pub struct EnvironmentEntity {
 #[derive(Debug, Clone)]
 pub struct InputEnvironmentEntity {
     pub name: String,
-    pub port: u16,
+    pub port: i32,
 }
 
 /// An index stored in the database

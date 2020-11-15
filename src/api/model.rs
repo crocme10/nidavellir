@@ -3,6 +3,7 @@ use futures::stream::{self, TryStreamExt};
 use juniper::futures::TryFutureExt;
 use juniper::{GraphQLEnum, GraphQLInputObject, GraphQLObject};
 use serde::{Deserialize, Serialize};
+use slog::debug;
 use snafu::ResultExt;
 use sqlx::Connection;
 use std::convert::TryFrom;
@@ -79,6 +80,7 @@ pub struct Environment {
     pub id: Uuid,
     pub name: String,
     pub signature: String,
+    pub port: i32, // We should use u16, but it does not implement GraphQLType
     pub indexes: Vec<Index>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
@@ -90,6 +92,7 @@ impl From<db::EnvironmentEntity> for Environment {
             id,
             name,
             signature,
+            port,
             indexes,
             created_at,
             updated_at,
@@ -97,11 +100,12 @@ impl From<db::EnvironmentEntity> for Environment {
         } = entity;
 
         let indexes = indexes.into_iter().map(Index::from).collect::<Vec<Index>>();
-
+        // let port = u16::try_from(port).expect("casting port");
         Environment {
             id,
             name,
             signature,
+            port,
             indexes,
             created_at,
             updated_at,
@@ -190,7 +194,10 @@ impl From<EnvironmentRequestBody> for db::InputEnvironmentEntity {
     fn from(request: EnvironmentRequestBody) -> Self {
         let EnvironmentRequestBody { name, .. } = request;
 
-        db::InputEnvironmentEntity { name, port: 0u16 }
+        // At this stage, when the user request an environment, the
+        // port is not known. So we set it to 0, and it will be assigned
+        // a value before it beeing used.
+        db::InputEnvironmentEntity { name, port: 0i32 }
     }
 }
 
@@ -260,6 +267,9 @@ pub async fn list_environments(
                 msg: "Could not get all them environments",
             })?;
 
+        // FIXME. Not sure this is the most efficient.... we open as many connections
+        // as there are environments, each of the connection retrieves the indexes for an
+        // environment. It is, at least, not very scalable.
         let entities: Vec<db::EnvironmentEntity> =
             stream::iter(entities.into_iter().map(|env| Ok(env)))
                 .and_then(|mut env| async move {
@@ -313,7 +323,8 @@ pub async fn create_environment(
             docker::create_twerg(&input.name, &context.state.settings, &context.state.logger)
                 .await?;
 
-        input.port = port;
+        input.port = port as i32;
+        debug!(context.state.logger, "Created Twerg at port {}", input.port);
 
         let pool = &context.state.pool;
 

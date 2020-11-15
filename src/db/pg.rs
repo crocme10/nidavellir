@@ -24,8 +24,9 @@ impl<'c> FromRow<'c, PgRow<'c>> for model::EnvironmentEntity {
             name: row.get(1),
             indexes: Vec::new(),
             signature: row.get(2),
-            created_at: row.get(3),
-            updated_at: row.get(4),
+            port: row.get(3),
+            created_at: row.get(4),
+            updated_at: row.get(5),
         })
     }
 }
@@ -95,18 +96,6 @@ impl model::ProvideData for PgConnection {
                 .await?;
 
         Ok(environments)
-        // stream::iter(envs.into_iter().map(|env| Ok(env)))
-        //     .and_then(|mut env| async move {
-        //         let idxs: Vec<model::IndexEntity> =
-        //             sqlx::query_as(r#"SELECT * FROM list_environment_indexes($1)"#)
-        //                 .bind(env.id)
-        //                 .fetch_all(self.clone())
-        //                 .await?;
-        //         env.indexes = idxs;
-        //         Ok(env)
-        //     })
-        //     .try_collect()
-        //     .await
     }
 
     async fn get_environment_indexes(
@@ -127,8 +116,9 @@ impl model::ProvideData for PgConnection {
         env: &model::InputEnvironmentEntity,
     ) -> model::ProvideResult<model::EnvironmentEntity> {
         let environment: model::EnvironmentEntity =
-            sqlx::query_as("SELECT * FROM create_environment($1::TEXT)")
+            sqlx::query_as("SELECT * FROM create_environment($1::TEXT, $2::INTEGER)")
                 .bind(&env.name)
+                .bind(&env.port)
                 .fetch_one(self)
                 .await?;
 
