@@ -1,0 +1,9 @@
+debug = true
+mode = "development"
+
+[database]
+url = "postgres://postgres:secret@localhost:5678"
+
+[service]
+host = "0.0.0.0"
+port = "7654"

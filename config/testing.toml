@@ -1,0 +1,23 @@
+debug = true
+mode = "development"
+
+[database]
+url = "hello.db"
+
+[zmq]
+host = "127.0.0.1"
+port = "5555"
+topic = "state"
+
+[elasticsearch]
+host = "localhost"
+port = "9200"
+
+[work]
+working_dir = "./work"
+mimirsbrunn_dir = "/home/matt/lab/rust/kisio/mimirsbrunn/target/release"
+cosmogony_dir = "/home/matt/lab/rust/kisio/cosmogony/target/release"
+
+[service]
+host = "0.0.0.0"
+port = "7000"
