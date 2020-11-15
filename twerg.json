@@ -1,0 +1,83 @@
+[
+  {
+    "service": "elasticsearch",
+    "docker": {
+      "image": "elasticsearch",
+      "tag": "latest"
+    },
+    "network": {
+      "addr_base": "172.19",
+      "addr_suffix": 5
+    }
+  },
+  {
+    "service": "mimir-ingest",
+    "docker": {
+      "image": "mimir-ingest",
+      "tag": "latest"
+    },
+    "network": {
+      "addr_base": "172.19",
+      "addr_suffix": 10
+    },
+    "envs": [
+      "SETTINGS=development",
+      "DATABASE_NAME=env.db"
+    ]
+  },
+  {
+    "service": "bragi",
+    "docker": {
+      "image": "bragi",
+      "tag": "latest"
+    },
+    "network": {
+      "addr_base": "172.19",
+      "addr_suffix": 15
+    }
+  },
+  {
+    "service": "bragi-status",
+    "docker": {
+      "image": "bragi-status",
+      "tag": "latest"
+    },
+    "network": {
+      "addr_base": "172.19",
+      "addr_suffix": 20
+    }
+  },
+  {
+    "service": "bragi-graphql",
+    "docker": {
+      "image": "bragi-graphql",
+      "tag": "latest"
+    },
+    "network": {
+      "addr_base": "172.19",
+      "addr_suffix": 25
+    }
+  },
+  {
+    "service": "client",
+    "docker": {
+      "image": "client",
+      "tag": "latest"
+    },
+    "network": {
+      "addr_base": "172.19",
+      "addr_suffix": 30
+    }
+  },
+  {
+    "service": "nginx",
+    "docker": {
+      "image": "nginx",
+      "tag": "latest"
+    },
+    "network": {
+      "addr_base": "172.19",
+      "addr_suffix": 35
+    }
+  }
+]

@@ -6,6 +6,7 @@ edition = "2018"
 
 [dependencies]
 async-trait = "0.1.36"
+bollard = "0.8"
 chrono = { version = "0.4", features = [ "serde" ] }
 clap = "2.33.1"
 config = "0.10"

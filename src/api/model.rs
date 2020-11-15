@@ -12,6 +12,7 @@ use crate::api::gql::Context;
 use crate::db::model as db;
 use crate::db::model::ProvideData;
 use crate::db::Db;
+use crate::docker;
 use crate::error;
 
 #[derive(Debug, PartialEq, Serialize, Deserialize, GraphQLEnum)]
@@ -189,7 +190,7 @@ impl From<EnvironmentRequestBody> for db::InputEnvironmentEntity {
     fn from(request: EnvironmentRequestBody) -> Self {
         let EnvironmentRequestBody { name, .. } = request;
 
-        db::InputEnvironmentEntity { name }
+        db::InputEnvironmentEntity { name, port: 0u16 }
     }
 }
 
@@ -306,7 +307,13 @@ pub async fn create_environment(
     context: &Context,
 ) -> Result<SingleEnvironmentResponseBody, error::Error> {
     async move {
-        let input = db::InputEnvironmentEntity::from(request);
+        let mut input = db::InputEnvironmentEntity::from(request);
+
+        let port =
+            docker::create_twerg(&input.name, &context.state.settings, &context.state.logger)
+                .await?;
+
+        input.port = port;
 
         let pool = &context.state.pool;
 

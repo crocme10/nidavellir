@@ -7,6 +7,19 @@ use std::env;
 use super::error;
 
 #[derive(Debug, Clone, Deserialize)]
+pub struct Twerg {
+    /// Base port for front end to listener
+    pub base: u16,
+    /// Twerg configuration file
+    pub config: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct DockerRegistry {
+    pub url: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
 pub struct Database {
     pub url: String,
 }
@@ -22,6 +35,7 @@ pub struct Settings {
     pub debug: bool,
     pub testing: bool,
     pub mode: String,
+    pub twerg: Twerg,
     pub database: Database,
     pub service: Service,
 }

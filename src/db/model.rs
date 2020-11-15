@@ -40,6 +40,7 @@ pub struct EnvironmentEntity {
 #[derive(Debug, Clone)]
 pub struct InputEnvironmentEntity {
     pub name: String,
+    pub port: u16,
 }
 
 /// An index stored in the database

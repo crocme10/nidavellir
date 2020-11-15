@@ -1,6 +1,10 @@
 debug = true
 mode = "development"
 
+[twerg]
+base = 8000
+config = "twerg.json"
+
 [database]
 url = "postgres://postgres:secret@localhost:5678"
 

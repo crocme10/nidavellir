@@ -56,6 +56,13 @@ pub enum Error {
     #[snafu(display("Reqwest Error: {} - {}", msg, source))]
     #[snafu(visibility(pub))]
     ReqwestError { msg: String, source: reqwest::Error },
+
+    #[snafu(display("Docker Error: {} - {}", msg, source))]
+    #[snafu(visibility(pub))]
+    DockerError {
+        msg: String,
+        source: bollard::errors::Error,
+    },
 }
 
 impl IntoFieldError for Error {
@@ -127,6 +134,11 @@ impl IntoFieldError for Error {
                     "Reqwest Error",
                     graphql_value!({ "internal_error": errmsg }),
                 )
+            }
+
+            err @ Error::DockerError { .. } => {
+                let errmsg = format!("{}", err);
+                FieldError::new("Docker Error", graphql_value!({ "internal_error": errmsg }))
             }
         }
     }
