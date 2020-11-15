@@ -3,7 +3,7 @@ use futures::stream::{self, TryStreamExt};
 use juniper::futures::TryFutureExt;
 use juniper::{GraphQLEnum, GraphQLInputObject, GraphQLObject};
 use serde::{Deserialize, Serialize};
-use slog::debug;
+use slog::{debug, info};
 use snafu::ResultExt;
 use sqlx::Connection;
 use std::convert::TryFrom;
@@ -15,6 +15,7 @@ use crate::db::model::ProvideData;
 use crate::db::Db;
 use crate::docker;
 use crate::error;
+use crate::twerg::client;
 
 #[derive(Debug, PartialEq, Serialize, Deserialize, GraphQLEnum)]
 #[serde(rename_all = "camelCase")]
@@ -352,6 +353,48 @@ pub async fn create_environment(
     .await
 }
 
+/// Retrieve an environment based on its id.
+pub async fn get_environment_by_id(
+    id: db::EntityId,
+    context: &Context,
+) -> Result<SingleEnvironmentResponseBody, error::Error> {
+    async move {
+        let pool = &context.state.pool;
+
+        let mut tx = pool
+            .conn()
+            .and_then(Connection::begin)
+            .await
+            .context(error::DBError {
+                msg: "could not initiate transaction",
+            })?;
+
+        let environment =
+            ProvideData::get_environment_by_id(&mut tx as &mut sqlx::PgConnection, &id)
+                .await
+                .context(error::DBProvideError {
+                    msg: "Could not get environment",
+                })?;
+
+        let indexes = tx
+            .get_environment_indexes(&id)
+            .await
+            .context(error::DBProvideError {
+                msg: "Could not get all them environments",
+            })?;
+
+        tx.commit().await.context(error::DBError {
+            msg: "could not commit get environment transaction.",
+        })?;
+
+        let mut environment = Environment::from(environment);
+        environment.indexes = indexes.into_iter().map(Index::from).collect::<Vec<_>>();
+
+        Ok(SingleEnvironmentResponseBody::from(environment))
+    }
+    .await
+}
+
 /// Delete an environment. Return the deleted environment.
 pub async fn delete_environment(
     id: EnvironmentIdBody,
@@ -390,6 +433,25 @@ pub async fn create_index(
     context: &Context,
 ) -> Result<SingleIndexResponseBody, error::Error> {
     async move {
+        // First we need to retrieve the port of the twerg we're targeting.
+        // Second, we create a GraphQL query, which we submit to the twerg.
+        // Third, we enter the information in the database.
+
+        let environment = get_environment_by_id(request.environment, &context).await?;
+
+        info!(
+            context.state.logger,
+            "Retrieved environment from id {}", request.environment
+        );
+
+        let environment = environment.env.ok_or_else(|| error::Error::MiscError {
+            msg: format!("Could not retrieve environment {}", request.environment),
+        })?;
+
+        let _id = client::create_index(&request, environment.port, &context.state.logger).await?;
+
+        debug!(context.state.logger, "Requested Index Creation on Twerg");
+
         let input = db::InputIndexEntity::from(request);
 
         let pool = &context.state.pool;
@@ -405,11 +467,11 @@ pub async fn create_index(
         let resp = ProvideData::create_index(&mut tx as &mut sqlx::PgConnection, &input)
             .await
             .context(error::DBProvideError {
-                msg: "Could not create environment",
+                msg: "Could not create index",
             })?;
 
         tx.commit().await.context(error::DBError {
-            msg: "could not commit create environment transaction.",
+            msg: "could not commit create index transaction.",
         })?;
 
         let environment = Index::from(resp);

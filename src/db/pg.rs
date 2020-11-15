@@ -152,6 +152,19 @@ impl model::ProvideData for PgConnection {
                 .await?;
         Ok(index)
     }
+
+    async fn get_environment_by_id(
+        &mut self,
+        id: &model::EntityId,
+    ) -> model::ProvideResult<model::EnvironmentEntity> {
+        let environment: model::EnvironmentEntity =
+            sqlx::query_as("SELECT * FROM get_environment_by_id($1::UUID)")
+                .bind(&id)
+                .fetch_one(self)
+                .await?;
+
+        Ok(environment)
+    }
 }
 
 pub async fn init_db(conn_str: &str, logger: Logger) -> Result<(), error::Error> {
