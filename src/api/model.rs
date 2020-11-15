@@ -193,6 +193,11 @@ impl From<EnvironmentRequestBody> for db::InputEnvironmentEntity {
     }
 }
 
+#[derive(Debug, Deserialize, Serialize, GraphQLInputObject)]
+pub struct EnvironmentIdBody {
+    pub id: Uuid,
+}
+
 #[derive(Debug, Deserialize, Serialize, GraphQLObject)]
 #[serde(rename_all = "camelCase")]
 pub struct SingleIndexResponseBody {
@@ -321,6 +326,38 @@ pub async fn create_environment(
 
         tx.commit().await.context(error::DBError {
             msg: "could not commit create environment transaction.",
+        })?;
+
+        let environment = Environment::from(resp);
+        Ok(SingleEnvironmentResponseBody::from(environment))
+    }
+    .await
+}
+
+/// Delete an environment. Return the deleted environment.
+pub async fn delete_environment(
+    id: EnvironmentIdBody,
+    context: &Context,
+) -> Result<SingleEnvironmentResponseBody, error::Error> {
+    async move {
+        let pool = &context.state.pool;
+
+        let mut tx = pool
+            .conn()
+            .and_then(Connection::begin)
+            .await
+            .context(error::DBError {
+                msg: "could not initiate transaction",
+            })?;
+
+        let resp = ProvideData::delete_environment(&mut tx as &mut sqlx::PgConnection, &id.id)
+            .await
+            .context(error::DBProvideError {
+                msg: "Could not delete environment",
+            })?;
+
+        tx.commit().await.context(error::DBError {
+            msg: "could not commit delete environment transaction.",
         })?;
 
         let environment = Environment::from(resp);

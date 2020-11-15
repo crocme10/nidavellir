@@ -50,6 +50,20 @@ impl Mutation {
             .map_err(IntoFieldError::into_field_error)
     }
 
+    async fn delete_environment(
+        &self,
+        id: model::EnvironmentIdBody,
+        context: &Context,
+    ) -> FieldResult<model::SingleEnvironmentResponseBody> {
+        info!(
+            context.state.logger,
+            "Request for environment '{}' deletion", id.id
+        );
+        model::delete_environment(id, context)
+            .await
+            .map_err(IntoFieldError::into_field_error)
+    }
+
     async fn create_index(
         &self,
         index: model::IndexRequestBody,

@@ -79,6 +79,8 @@ pub trait ProvideData {
         environment: &InputEnvironmentEntity,
     ) -> ProvideResult<EnvironmentEntity>;
 
+    async fn delete_environment(&mut self, environment: &Uuid) -> ProvideResult<EnvironmentEntity>;
+
     async fn create_index(&mut self, index: &InputIndexEntity) -> ProvideResult<IndexEntity>;
 }
 

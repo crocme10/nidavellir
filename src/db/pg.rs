@@ -135,6 +135,19 @@ impl model::ProvideData for PgConnection {
         Ok(environment)
     }
 
+    async fn delete_environment(
+        &mut self,
+        env: &model::EntityId,
+    ) -> model::ProvideResult<model::EnvironmentEntity> {
+        let environment: model::EnvironmentEntity =
+            sqlx::query_as("SELECT * FROM delete_environment($1::UUID)")
+                .bind(&env)
+                .fetch_one(self)
+                .await?;
+
+        Ok(environment)
+    }
+
     async fn create_index(
         &mut self,
         index: &model::InputIndexEntity,
